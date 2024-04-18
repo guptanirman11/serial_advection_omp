@@ -1,22 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <omp.h>
 
 int main(int argc, char *argv[]){
-    if (argc != 7){
+    if (argc != 8){
         printf("Usage: %s N NT L T u v\n", argv[0]);
         return 1;
     }
+    
     int N = atoi(argv[1]);
     int NT = atoi(argv[2]);
     double L = atof(argv[3]);
     double T = atof(argv[4]);
     double u = atof(argv[5]);
     double v = atof(argv[6]);
+    int nt = atoi(argv[7]);
 
     double dx = L/N;
     double dt = T/NT;
     double dy = dx;
+
+    omp_set_num_threads(nt); // Setting the number of threads
 
     // Ensuring Courant stability condition
     if (dt > dx/ (sqrt(2*(u*u + v*v)))){
@@ -39,6 +44,7 @@ int main(int argc, char *argv[]){
     double y_0 = L/2;
     double sigma = L/4;
 
+    #pragma omp parallel for default(none) shared(C, N, dx, dy, x_0, y_0, sigma) private(i, j)
     // Initialize concentration array
     for (int i = 0;i < N; i++){
         for (int j = 0; j<N; j++){
@@ -86,13 +92,6 @@ int main(int argc, char *argv[]){
         double **tmp = C;
         C = C_new;
         C_new = tmp;
-    }
-    printf("Final Concentration Array:\n");
-    for (int i = 10; i < N; i += 10) {
-        for (int j = 10; j < N; j += 10) {
-            printf("%.2f ", C[i][j]);
-        }
-        printf("\n");
     }
     // Free memory
     for (int i = 0; i < N; i++){
